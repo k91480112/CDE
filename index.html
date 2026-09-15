@@ -68,6 +68,41 @@
       word-break: break-all;
     }
 
+    .button {
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      border: 0;
+      border-radius: 9px;
+      background: #273744;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .button:disabled {
+      background: #c7ccd0;
+      color: #777;
+    }
+
+    .notice {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f3f4f5;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .success {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f0f4f1;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
     .error {
       display: none;
       padding: 16px;
@@ -83,19 +118,24 @@
 
 <div class="app">
 
-  <h1>院所待修正事項</h1>
+  <h1>
+    院所待修正事項
+  </h1>
+
 
   <div
     id="status"
     class="status">
-    步驟 1：載入 LIFF
+    正在啟動 LINE
   </div>
+
 
   <div
     id="result"
     style="display:none">
 
     <div class="box">
+
       <div class="label">
         LINE 顯示名稱
       </div>
@@ -104,9 +144,12 @@
         id="displayName"
         class="value">
       </div>
+
     </div>
 
+
     <div class="box">
+
       <div class="label">
         執行環境
       </div>
@@ -115,9 +158,12 @@
         id="environment"
         class="value">
       </div>
+
     </div>
 
+
     <div class="box">
+
       <div class="label">
         聊天來源
       </div>
@@ -126,9 +172,12 @@
         id="contextType"
         class="value">
       </div>
+
     </div>
 
+
     <div class="box">
+
       <div class="label">
         登入狀態
       </div>
@@ -137,19 +186,46 @@
         id="loginState"
         class="value">
       </div>
+
     </div>
 
+
     <div class="box">
+
       <div class="label">
         測試版本
       </div>
 
       <div class="value">
-        GH-LIFF-TEST-02
+        GH-LIFF-TEST-03
       </div>
+
+    </div>
+
+
+    <button
+      id="sendButton"
+      class="button"
+      onclick="sendTestMessage()">
+      傳送測試訊息到目前群組
+    </button>
+
+
+    <div
+      id="sendNotice"
+      class="notice">
+      請從 LINE 群組內的 LIFF 連結開啟此頁，再進行測試。
+    </div>
+
+
+    <div
+      id="sendResult"
+      class="success"
+      style="display:none">
     </div>
 
   </div>
+
 
   <div
     id="error"
@@ -164,22 +240,34 @@
 const LIFF_ID =
   '2011620030-NYQtPNfE';
 
+let currentContext = null;
+
+let currentProfile = null;
+
 
 async function start() {
 
   const status =
-    document.getElementById('status');
+    document.getElementById(
+      'status'
+    );
 
   const result =
-    document.getElementById('result');
+    document.getElementById(
+      'result'
+    );
 
   const errorBox =
-    document.getElementById('error');
+    document.getElementById(
+      'error'
+    );
+
 
   try {
 
     status.textContent =
-      '步驟 2：初始化 LINE';
+      '初始化 LINE';
+
 
     await Promise.race([
 
@@ -191,66 +279,128 @@ async function start() {
       new Promise(
         (_, reject) =>
           setTimeout(
-            () => reject(
-              new Error(
-                'liff.init() 超過 15 秒'
-              )
-            ),
+            () =>
+              reject(
+                new Error(
+                  'liff.init() 超過 15 秒'
+                )
+              ),
             15000
           )
       )
 
     ]);
 
-    status.textContent =
-      '步驟 3：確認登入狀態';
 
     if (!liff.isLoggedIn()) {
+
       throw new Error(
-        'LIFF 初始化完成，但目前仍未登入 LINE。'
+        '目前尚未完成 LINE 登入。'
       );
     }
 
-    status.textContent =
-      '步驟 4：取得使用者資料';
 
-    const profile =
+    status.textContent =
+      '取得 LINE 使用者資料';
+
+
+    currentProfile =
       await liff.getProfile();
 
-    const context =
+
+    currentContext =
       liff.getContext();
 
-    document
-      .getElementById('displayName')
-      .textContent =
-        profile.displayName || '無';
 
     document
-      .getElementById('environment')
+      .getElementById(
+        'displayName'
+      )
+      .textContent =
+        currentProfile.displayName ||
+        '無';
+
+
+    document
+      .getElementById(
+        'environment'
+      )
       .textContent =
         liff.isInClient()
           ? 'LINE App 內'
           : '外部瀏覽器';
 
-    document
-      .getElementById('contextType')
-      .textContent =
-        context && context.type
-          ? context.type
-          : '無聊天來源';
 
     document
-      .getElementById('loginState')
+      .getElementById(
+        'contextType'
+      )
+      .textContent =
+        currentContext &&
+        currentContext.type
+          ? currentContext.type
+          : '無聊天來源';
+
+
+    document
+      .getElementById(
+        'loginState'
+      )
       .textContent =
         liff.isLoggedIn()
           ? '已登入'
           : '未登入';
+
+
+    const sendButton =
+      document.getElementById(
+        'sendButton'
+      );
+
+
+    const notice =
+      document.getElementById(
+        'sendNotice'
+      );
+
+
+    if (
+      !liff.isInClient()
+    ) {
+
+      sendButton.disabled =
+        true;
+
+      notice.textContent =
+        '目前不是從 LINE App 內開啟，因此無法測試直接傳回聊天室。';
+
+    } else if (
+      !currentContext ||
+      currentContext.type !== 'group'
+    ) {
+
+      sendButton.disabled =
+        true;
+
+      notice.textContent =
+        '目前聊天來源不是 group。請把 LIFF 網址傳到測試群組，再從群組中的連結開啟。';
+
+    } else {
+
+      sendButton.disabled =
+        false;
+
+      notice.textContent =
+        '已確認目前是從 LINE 群組開啟，可以測試傳回群組。';
+    }
+
 
     status.style.display =
       'none';
 
     result.style.display =
       'block';
+
 
   } catch (error) {
 
@@ -263,10 +413,92 @@ async function start() {
     errorBox.textContent =
       'LIFF 啟動失敗\n\n' +
       (
-        error && error.message
+        error &&
+        error.message
           ? error.message
           : String(error)
       );
+  }
+}
+
+
+async function sendTestMessage() {
+
+  const button =
+    document.getElementById(
+      'sendButton'
+    );
+
+  const resultBox =
+    document.getElementById(
+      'sendResult'
+    );
+
+
+  button.disabled =
+    true;
+
+  button.textContent =
+    '傳送中';
+
+
+  try {
+
+    if (
+      !currentContext ||
+      currentContext.type !== 'group'
+    ) {
+
+      throw new Error(
+        '目前不是從 LINE 群組開啟。'
+      );
+    }
+
+
+    await liff.sendMessages([
+      {
+        type: 'text',
+
+        text:
+          '院所待修正事項 LINE 群組連線測試成功\n' +
+          '測試者：' +
+          (
+            currentProfile
+              ? currentProfile.displayName
+              : ''
+          )
+      }
+    ]);
+
+
+    resultBox.style.display =
+      'block';
+
+    resultBox.textContent =
+      '訊息已成功傳送到目前 LINE 群組。';
+
+
+  } catch (error) {
+
+    resultBox.style.display =
+      'block';
+
+    resultBox.textContent =
+      '傳送失敗：' +
+      (
+        error &&
+        error.message
+          ? error.message
+          : String(error)
+      );
+
+  } finally {
+
+    button.disabled =
+      false;
+
+    button.textContent =
+      '傳送測試訊息到目前群組';
   }
 }
 
@@ -279,4 +511,5 @@ window.addEventListener(
 </script>
 
 </body>
+
 </html>
