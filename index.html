@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-
 <head>
   <meta charset="UTF-8">
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
   >
 
   <title>院所待修正事項</title>
@@ -18,10 +17,14 @@
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background: #f5f6f7;
-      color: #202124;
       font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -30,209 +33,102 @@
         sans-serif;
     }
 
-    .app {
-      max-width: 620px;
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 24px 18px;
+    #appFrame {
+      display: none;
+      width: 100%;
+      height: 100dvh;
+      border: 0;
       background: #fff;
     }
 
-    h1 {
-      margin: 0 0 22px;
-      font-size: 22px;
+    #boot {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: #fff;
+      z-index: 10;
     }
 
-    .status {
-      padding: 22px;
+    .boot-box {
+      width: min(380px, 92vw);
       text-align: center;
-      line-height: 1.7;
     }
 
-    .box {
-      margin-bottom: 12px;
-      padding: 15px;
-      border: 1px solid #d9dee2;
-      border-radius: 9px;
-    }
-
-    .label {
-      margin-bottom: 5px;
-      font-size: 12px;
-      color: #6b7280;
-    }
-
-    .value {
-      font-size: 16px;
-      font-weight: 700;
-      word-break: break-all;
-    }
-
-    .button {
-      width: 100%;
-      margin-top: 16px;
-      padding: 14px;
-      border: 0;
-      border-radius: 9px;
-      background: #273744;
-      color: #fff;
-      font-size: 16px;
+    .boot-title {
+      font-size: 20px;
       font-weight: 700;
     }
 
-    .button:disabled {
-      background: #c7ccd0;
-      color: #777;
-    }
-
-    .notice {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 8px;
-      background: #f3f4f5;
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    .success {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 8px;
-      background: #f0f4f1;
+    .boot-text {
+      margin-top: 10px;
+      color: #666;
       font-size: 14px;
       line-height: 1.7;
     }
 
-    .error {
+    #errorBox {
       display: none;
-      padding: 16px;
-      border: 1px solid #cfd5da;
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid #d6dade;
       border-radius: 9px;
+      text-align: left;
       white-space: pre-wrap;
       line-height: 1.7;
+    }
+
+    .retry {
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px;
+      border: 0;
+      border-radius: 8px;
+      background: #263746;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
     }
   </style>
 </head>
 
 <body>
 
-<div class="app">
+<div id="boot">
 
-  <h1>
-    院所待修正事項
-  </h1>
+  <div class="boot-box">
 
-
-  <div
-    id="status"
-    class="status">
-    正在啟動 LINE
-  </div>
-
-
-  <div
-    id="result"
-    style="display:none">
-
-    <div class="box">
-
-      <div class="label">
-        LINE 顯示名稱
-      </div>
-
-      <div
-        id="displayName"
-        class="value">
-      </div>
-
+    <div class="boot-title">
+      院所待修正事項
     </div>
 
-
-    <div class="box">
-
-      <div class="label">
-        執行環境
-      </div>
-
-      <div
-        id="environment"
-        class="value">
-      </div>
-
+    <div
+      id="bootText"
+      class="boot-text">
+      正在連線 LINE
     </div>
 
-
-    <div class="box">
-
-      <div class="label">
-        聊天來源
-      </div>
-
-      <div
-        id="contextType"
-        class="value">
-      </div>
-
-    </div>
-
-
-    <div class="box">
-
-      <div class="label">
-        登入狀態
-      </div>
-
-      <div
-        id="loginState"
-        class="value">
-      </div>
-
-    </div>
-
-
-    <div class="box">
-
-      <div class="label">
-        測試版本
-      </div>
-
-      <div class="value">
-        GH-LIFF-TEST-03
-      </div>
-
-    </div>
-
+    <div id="errorBox"></div>
 
     <button
-      id="sendButton"
-      class="button"
-      onclick="sendTestMessage()">
-      傳送測試訊息到目前群組
+      id="retryButton"
+      class="retry"
+      style="display:none"
+      onclick="location.reload()">
+      重新載入
     </button>
 
-
-    <div
-      id="sendNotice"
-      class="notice">
-      請從 LINE 群組內的 LIFF 連結開啟此頁，再進行測試。
-    </div>
-
-
-    <div
-      id="sendResult"
-      class="success"
-      style="display:none">
-    </div>
-
-  </div>
-
-
-  <div
-    id="error"
-    class="error">
   </div>
 
 </div>
+
+
+<iframe
+  id="appFrame"
+  title="院所待修正事項">
+</iframe>
 
 
 <script>
@@ -240,33 +136,106 @@
 const LIFF_ID =
   '2011620030-NYQtPNfE';
 
+const APP_URL =
+  'https://script.google.com/macros/s/AKfycbwUjVWLmHYsccXb0TLdlKNa-sfiv4mYdlUpy6b6bFQQZyGsuwPEvQ4ZbZt-IyL6eeA0LA/exec';
+
+const BRIDGE_VERSION =
+  'CDE-BRIDGE-01';
+
+
+let lineIdToken = '';
+
 let currentContext = null;
 
 let currentProfile = null;
 
+let childOrigin = '';
 
-async function start() {
+let liffReady = false;
 
-  const status =
+
+const appFrame =
+  document.getElementById(
+    'appFrame'
+  );
+
+
+function setBootText(text) {
+
+  document
+    .getElementById(
+      'bootText'
+    )
+    .textContent =
+      text;
+}
+
+
+function showFatal(message) {
+
+  const box =
     document.getElementById(
-      'status'
+      'errorBox'
     );
 
-  const result =
-    document.getElementById(
-      'result'
-    );
+  box.style.display =
+    'block';
 
-  const errorBox =
-    document.getElementById(
-      'error'
-    );
+  box.textContent =
+    message;
 
+  document
+    .getElementById(
+      'retryButton'
+    )
+    .style.display =
+      'block';
+
+  setBootText(
+    '系統無法啟動'
+  );
+}
+
+
+function isTrustedChildOrigin(origin) {
+
+  if (
+    origin ===
+    'https://script.google.com'
+  ) {
+    return true;
+  }
 
   try {
 
-    status.textContent =
-      '初始化 LINE';
+    const url =
+      new URL(origin);
+
+    return (
+      url.protocol === 'https:' &&
+      (
+        url.hostname ===
+          'script.googleusercontent.com' ||
+        url.hostname.endsWith(
+          '.googleusercontent.com'
+        )
+      )
+    );
+
+  } catch (error) {
+
+    return false;
+  }
+}
+
+
+async function initializeLiff() {
+
+  try {
+
+    setBootText(
+      '初始化 LINE'
+    );
 
 
     await Promise.race([
@@ -282,7 +251,7 @@ async function start() {
             () =>
               reject(
                 new Error(
-                  'liff.init() 超過 15 秒'
+                  'LINE 初始化超過 15 秒'
                 )
               ),
             15000
@@ -292,224 +261,370 @@ async function start() {
     ]);
 
 
-    if (!liff.isLoggedIn()) {
+    if (
+      !liff.isLoggedIn()
+    ) {
+
+      if (
+        !liff.isInClient()
+      ) {
+
+        liff.login({
+          redirectUri:
+            window.location.href
+        });
+
+        return;
+      }
 
       throw new Error(
-        '目前尚未完成 LINE 登入。'
+        'LINE 尚未完成登入'
       );
     }
 
 
-    status.textContent =
-      '取得 LINE 使用者資料';
+    setBootText(
+      '取得 LINE 身分'
+    );
 
 
-    currentProfile =
-      await liff.getProfile();
+    lineIdToken =
+      liff.getIDToken();
+
+
+    if (!lineIdToken) {
+
+      throw new Error(
+        '無法取得 LINE ID Token，請確認 LIFF 已啟用 openid。'
+      );
+    }
+
+
+    try {
+
+      currentProfile =
+        await liff.getProfile();
+
+    } catch (error) {
+
+      currentProfile =
+        null;
+    }
 
 
     currentContext =
       liff.getContext();
 
 
-    document
-      .getElementById(
-        'displayName'
-      )
-      .textContent =
-        currentProfile.displayName ||
-        '無';
+    liffReady =
+      true;
 
 
-    document
-      .getElementById(
-        'environment'
-      )
-      .textContent =
-        liff.isInClient()
-          ? 'LINE App 內'
-          : '外部瀏覽器';
+    setBootText(
+      '載入院所待修正系統'
+    );
 
 
-    document
-      .getElementById(
-        'contextType'
-      )
-      .textContent =
-        currentContext &&
-        currentContext.type
-          ? currentContext.type
-          : '無聊天來源';
+    appFrame.src =
+      APP_URL;
 
-
-    document
-      .getElementById(
-        'loginState'
-      )
-      .textContent =
-        liff.isLoggedIn()
-          ? '已登入'
-          : '未登入';
-
-
-    const sendButton =
-      document.getElementById(
-        'sendButton'
-      );
-
-
-    const notice =
-      document.getElementById(
-        'sendNotice'
-      );
-
-
-    if (
-      !liff.isInClient()
-    ) {
-
-      sendButton.disabled =
-        true;
-
-      notice.textContent =
-        '目前不是從 LINE App 內開啟，因此無法測試直接傳回聊天室。';
-
-    } else if (
-      !currentContext ||
-      currentContext.type !== 'group'
-    ) {
-
-      sendButton.disabled =
-        true;
-
-      notice.textContent =
-        '目前聊天來源不是 group。請把 LIFF 網址傳到測試群組，再從群組中的連結開啟。';
-
-    } else {
-
-      sendButton.disabled =
-        false;
-
-      notice.textContent =
-        '已確認目前是從 LINE 群組開啟，可以測試傳回群組。';
-    }
-
-
-    status.style.display =
-      'none';
-
-    result.style.display =
+    appFrame.style.display =
       'block';
 
 
   } catch (error) {
 
-    status.style.display =
-      'none';
-
-    errorBox.style.display =
-      'block';
-
-    errorBox.textContent =
-      'LIFF 啟動失敗\n\n' +
-      (
-        error &&
-        error.message
-          ? error.message
-          : String(error)
-      );
+    showFatal(
+      error &&
+      error.message
+        ? error.message
+        : String(error)
+    );
   }
 }
 
 
-async function sendTestMessage() {
+/* =========================================================
+   Apps Script iframe 橋接
+   ========================================================= */
 
-  const button =
-    document.getElementById(
-      'sendButton'
+window.addEventListener(
+  'message',
+  async event => {
+
+    if (
+      event.source !==
+      appFrame.contentWindow
+    ) {
+      return;
+    }
+
+
+    const data =
+      event.data || {};
+
+
+    if (
+      data.type ===
+      'CDE_READY'
+    ) {
+
+      if (
+        !isTrustedChildOrigin(
+          event.origin
+        )
+      ) {
+
+        console.warn(
+          'Rejected child origin:',
+          event.origin
+        );
+
+        return;
+      }
+
+
+      childOrigin =
+        event.origin;
+
+
+      if (
+        !liffReady ||
+        !lineIdToken
+      ) {
+        return;
+      }
+
+
+      appFrame.contentWindow
+        .postMessage(
+          {
+            type:
+              'CDE_AUTH',
+
+            bridgeVersion:
+              BRIDGE_VERSION,
+
+            idToken:
+              lineIdToken,
+
+            inClient:
+              liff.isInClient(),
+
+            contextType:
+              currentContext &&
+              currentContext.type
+                ? currentContext.type
+                : '',
+
+            displayName:
+              currentProfile &&
+              currentProfile.displayName
+                ? currentProfile.displayName
+                : ''
+          },
+          childOrigin
+        );
+
+
+      document
+        .getElementById(
+          'boot'
+        )
+        .style.display =
+          'none';
+
+      return;
+    }
+
+
+    if (
+      !childOrigin ||
+      event.origin !==
+      childOrigin
+    ) {
+      return;
+    }
+
+
+    if (
+      data.type ===
+      'CDE_LINE_SEND'
+    ) {
+
+      await handleLineSend(
+        data
+      );
+    }
+  }
+);
+
+
+/* =========================================================
+   LINE 群組通知
+   ========================================================= */
+
+async function handleLineSend(data) {
+
+  const requestId =
+    String(
+      data.requestId || ''
     );
 
-  const resultBox =
-    document.getElementById(
-      'sendResult'
+  const text =
+    String(
+      data.text || ''
+    ).slice(
+      0,
+      5000
+    );
+
+  const allowShareFallback =
+    Boolean(
+      data.allowShareFallback
     );
 
 
-  button.disabled =
-    true;
+  if (!text) {
 
-  button.textContent =
-    '傳送中';
+    sendBridgeResult(
+      requestId,
+      false,
+      'failed',
+      '通知內容為空白'
+    );
+
+    return;
+  }
+
+
+  const messages = [
+    {
+      type:
+        'text',
+
+      text:
+        text
+    }
+  ];
 
 
   try {
 
+    const type =
+      currentContext &&
+      currentContext.type
+        ? currentContext.type
+        : '';
+
+
     if (
-      !currentContext ||
-      currentContext.type !== 'group'
+      liff.isInClient() &&
+      type === 'group'
     ) {
 
-      throw new Error(
-        '目前不是從 LINE 群組開啟。'
+      await liff.sendMessages(
+        messages
       );
+
+
+      sendBridgeResult(
+        requestId,
+        true,
+        'sent',
+        ''
+      );
+
+      return;
     }
 
 
-    await liff.sendMessages([
-      {
-        type: 'text',
+    if (
+      allowShareFallback &&
+      typeof liff.shareTargetPicker ===
+        'function'
+    ) {
 
-        text:
-          '院所待修正事項 LINE 群組連線測試成功\n' +
-          '測試者：' +
-          (
-            currentProfile
-              ? currentProfile.displayName
-              : ''
-          )
-      }
-    ]);
+      await liff.shareTargetPicker(
+        messages
+      );
 
 
-    resultBox.style.display =
-      'block';
+      sendBridgeResult(
+        requestId,
+        true,
+        'shared',
+        ''
+      );
 
-    resultBox.textContent =
-      '訊息已成功傳送到目前 LINE 群組。';
+      return;
+    }
+
+
+    sendBridgeResult(
+      requestId,
+      false,
+      'skipped',
+      '目前不是從 LINE 群組開啟'
+    );
 
 
   } catch (error) {
 
-    resultBox.style.display =
-      'block';
-
-    resultBox.textContent =
-      '傳送失敗：' +
-      (
-        error &&
-        error.message
-          ? error.message
-          : String(error)
-      );
-
-  } finally {
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      '傳送測試訊息到目前群組';
+    sendBridgeResult(
+      requestId,
+      false,
+      'failed',
+      error &&
+      error.message
+        ? error.message
+        : String(error)
+    );
   }
 }
 
 
-window.addEventListener(
-  'load',
-  start
-);
+function sendBridgeResult(
+  requestId,
+  ok,
+  status,
+  message
+) {
+
+  if (
+    !childOrigin ||
+    !appFrame.contentWindow
+  ) {
+    return;
+  }
+
+
+  appFrame.contentWindow
+    .postMessage(
+      {
+        type:
+          'CDE_LINE_RESULT',
+
+        requestId:
+          requestId,
+
+        ok:
+          ok,
+
+        status:
+          status,
+
+        message:
+          message || ''
+      },
+      childOrigin
+    );
+}
+
+
+initializeLiff();
 
 </script>
 
 </body>
-
 </html>
