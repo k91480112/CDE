@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -10,21 +12,25 @@
 
   <title>院所待修正事項</title>
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script
+    src="https://static.line-scdn.net/liff/edge/2/sdk.js">
+  </script>
 
   <style>
+
     * {
       box-sizing: border-box;
     }
 
     html,
     body {
-      margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
       background: #f5f6f7;
+      color: #202124;
       font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -44,46 +50,55 @@
     #boot {
       position: fixed;
       inset: 0;
+      z-index: 100;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
       background: #fff;
-      z-index: 10;
     }
 
     .boot-box {
-      width: min(380px, 92vw);
+      width: min(390px, 92vw);
       text-align: center;
     }
 
     .boot-title {
-      font-size: 20px;
+      font-size: 21px;
       font-weight: 700;
     }
 
     .boot-text {
-      margin-top: 10px;
-      color: #666;
-      font-size: 14px;
+      margin-top: 12px;
+      color: #5f6368;
+      font-size: 15px;
       line-height: 1.7;
+    }
+
+    .version {
+      margin-top: 6px;
+      color: #90959a;
+      font-size: 11px;
     }
 
     #errorBox {
       display: none;
-      margin-top: 16px;
+      margin-top: 18px;
       padding: 14px;
-      border: 1px solid #d6dade;
+      border: 1px solid #d7dbdf;
       border-radius: 9px;
+      background: #fafbfb;
       text-align: left;
       white-space: pre-wrap;
+      font-size: 14px;
       line-height: 1.7;
     }
 
     .retry {
+      display: none;
       width: 100%;
       margin-top: 14px;
-      padding: 12px;
+      padding: 13px;
       border: 0;
       border-radius: 8px;
       background: #263746;
@@ -91,10 +106,14 @@
       font-size: 16px;
       font-weight: 700;
     }
+
   </style>
+
 </head>
 
+
 <body>
+
 
 <div id="boot">
 
@@ -107,7 +126,11 @@
     <div
       id="bootText"
       class="boot-text">
-      正在連線 LINE
+      正在啟動
+    </div>
+
+    <div class="version">
+      CDE-BRIDGE-02
     </div>
 
     <div id="errorBox"></div>
@@ -115,7 +138,6 @@
     <button
       id="retryButton"
       class="retry"
-      style="display:none"
       onclick="location.reload()">
       重新載入
     </button>
@@ -133,25 +155,20 @@
 
 <script>
 
+/* =========================================================
+   基本設定
+   ========================================================= */
+
 const LIFF_ID =
   '2011620030-NYQtPNfE';
+
 
 const APP_URL =
   'https://script.google.com/macros/s/AKfycbwUjVWLmHYsccXb0TLdlKNa-sfiv4mYdlUpy6b6bFQQZyGsuwPEvQ4ZbZt-IyL6eeA0LA/exec';
 
+
 const BRIDGE_VERSION =
-  'CDE-BRIDGE-01';
-
-
-let lineIdToken = '';
-
-let currentContext = null;
-
-let currentProfile = null;
-
-let childOrigin = '';
-
-let liffReady = false;
+  'CDE-BRIDGE-02';
 
 
 const appFrame =
@@ -160,7 +177,50 @@ const appFrame =
   );
 
 
-function setBootText(text) {
+let lineIdToken =
+  '';
+
+
+let currentContext =
+  null;
+
+
+let currentProfile =
+  null;
+
+
+let liffReady =
+  false;
+
+
+/*
+  注意：
+  Apps Script HTML Service 實際可能再包一層
+  Google sandbox iframe。
+
+  因此不能假設真正傳訊息的 window
+  就是 appFrame.contentWindow。
+*/
+
+let childOrigin =
+  '';
+
+
+let childWindow =
+  null;
+
+
+let systemReadyTimer =
+  null;
+
+
+/* =========================================================
+   啟動畫面
+   ========================================================= */
+
+function setBootText(
+  text
+) {
 
   document
     .getElementById(
@@ -171,18 +231,36 @@ function setBootText(text) {
 }
 
 
-function showFatal(message) {
+function showFatal(
+  message
+) {
 
-  const box =
+  if (
+    systemReadyTimer
+  ) {
+
+    clearTimeout(
+      systemReadyTimer
+    );
+
+    systemReadyTimer =
+      null;
+  }
+
+
+  const errorBox =
     document.getElementById(
       'errorBox'
     );
 
-  box.style.display =
+
+  errorBox.style.display =
     'block';
 
-  box.textContent =
+
+  errorBox.textContent =
     message;
+
 
   document
     .getElementById(
@@ -191,36 +269,96 @@ function showFatal(message) {
     .style.display =
       'block';
 
+
   setBootText(
     '系統無法啟動'
   );
 }
 
 
-function isTrustedChildOrigin(origin) {
+function finishBoot() {
 
   if (
-    origin ===
-    'https://script.google.com'
+    systemReadyTimer
   ) {
-    return true;
+
+    clearTimeout(
+      systemReadyTimer
+    );
+
+    systemReadyTimer =
+      null;
   }
+
+
+  document
+    .getElementById(
+      'boot'
+    )
+    .style.display =
+      'none';
+
+
+  appFrame.style.display =
+    'block';
+}
+
+
+/* =========================================================
+   Google iframe Origin 驗證
+   ========================================================= */
+
+function isTrustedChildOrigin(
+  origin
+) {
 
   try {
 
     const url =
-      new URL(origin);
+      new URL(
+        origin
+      );
 
-    return (
-      url.protocol === 'https:' &&
-      (
-        url.hostname ===
-          'script.googleusercontent.com' ||
-        url.hostname.endsWith(
-          '.googleusercontent.com'
-        )
+
+    if (
+      url.protocol !==
+      'https:'
+    ) {
+
+      return false;
+    }
+
+
+    if (
+      url.hostname ===
+      'script.google.com'
+    ) {
+
+      return true;
+    }
+
+
+    if (
+      url.hostname ===
+      'script.googleusercontent.com'
+    ) {
+
+      return true;
+    }
+
+
+    if (
+      url.hostname.endsWith(
+        '.googleusercontent.com'
       )
-    );
+    ) {
+
+      return true;
+    }
+
+
+    return false;
+
 
   } catch (error) {
 
@@ -228,6 +366,10 @@ function isTrustedChildOrigin(origin) {
   }
 }
 
+
+/* =========================================================
+   LIFF 初始化
+   ========================================================= */
 
 async function initializeLiff() {
 
@@ -241,21 +383,30 @@ async function initializeLiff() {
     await Promise.race([
 
       liff.init({
-        liffId: LIFF_ID,
-        withLoginOnExternalBrowser: true
+        liffId:
+          LIFF_ID,
+
+        withLoginOnExternalBrowser:
+          true
       }),
 
+
       new Promise(
-        (_, reject) =>
+        (_, reject) => {
+
           setTimeout(
-            () =>
+            () => {
+
               reject(
                 new Error(
                   'LINE 初始化超過 15 秒'
                 )
-              ),
+              );
+
+            },
             15000
-          )
+          );
+        }
       )
 
     ]);
@@ -269,16 +420,19 @@ async function initializeLiff() {
         !liff.isInClient()
       ) {
 
-        liff.login({
-          redirectUri:
-            window.location.href
-        });
+        setBootText(
+          '準備登入 LINE'
+        );
+
+
+        liff.login();
 
         return;
       }
 
+
       throw new Error(
-        'LINE 尚未完成登入'
+        'LINE App 內尚未完成登入'
       );
     }
 
@@ -292,10 +446,12 @@ async function initializeLiff() {
       liff.getIDToken();
 
 
-    if (!lineIdToken) {
+    if (
+      !lineIdToken
+    ) {
 
       throw new Error(
-        '無法取得 LINE ID Token，請確認 LIFF 已啟用 openid。'
+        '無法取得 LINE ID Token。\n\n請確認 LIFF App 已開啟 openid 權限。'
       );
     }
 
@@ -325,11 +481,32 @@ async function initializeLiff() {
     );
 
 
-    appFrame.src =
-      APP_URL;
+    /*
+      先顯示 iframe，但仍由 boot 蓋住。
+      等內頁真正驗證成功才拿掉 boot。
+    */
 
     appFrame.style.display =
       'block';
+
+
+    appFrame.src =
+      APP_URL;
+
+
+    systemReadyTimer =
+      setTimeout(
+        () => {
+
+          showFatal(
+            '院所待修正系統載入超過 25 秒。\n\n' +
+            'LINE 已完成登入，但 Apps Script 內頁沒有完成連線。\n\n' +
+            '請確認 Apps Script 已重新部署最新版本。'
+          );
+
+        },
+        25000
+      );
 
 
   } catch (error) {
@@ -345,24 +522,24 @@ async function initializeLiff() {
 
 
 /* =========================================================
-   Apps Script iframe 橋接
+   Apps Script Bridge
    ========================================================= */
 
 window.addEventListener(
   'message',
   async event => {
 
-    if (
-      event.source !==
-      appFrame.contentWindow
-    ) {
-      return;
-    }
-
-
     const data =
       event.data || {};
 
+
+    /*
+      第一次 CDE_READY：
+      這裡不檢查 appFrame.contentWindow。
+
+      因為真正發送 CDE_READY 的可能是
+      Apps Script 裡面的 Google sandbox iframe。
+    */
 
     if (
       data.type ===
@@ -376,9 +553,17 @@ window.addEventListener(
       ) {
 
         console.warn(
-          'Rejected child origin:',
+          'Rejected CDE_READY origin:',
           event.origin
         );
+
+        return;
+      }
+
+
+      if (
+        !event.source
+      ) {
 
         return;
       }
@@ -388,15 +573,25 @@ window.addEventListener(
         event.origin;
 
 
+      childWindow =
+        event.source;
+
+
       if (
         !liffReady ||
         !lineIdToken
       ) {
+
         return;
       }
 
 
-      appFrame.contentWindow
+      setBootText(
+        '驗證 LINE 身分'
+      );
+
+
+      childWindow
         .postMessage(
           {
             type:
@@ -427,25 +622,81 @@ window.addEventListener(
         );
 
 
-      document
-        .getElementById(
-          'boot'
-        )
-        .style.display =
-          'none';
+      return;
+    }
+
+
+    /*
+      CDE_READY 之後，
+      只接受同一個 Google iframe 的訊息。
+    */
+
+    if (
+      !childWindow ||
+      !childOrigin
+    ) {
 
       return;
     }
 
 
     if (
-      !childOrigin ||
-      event.origin !==
-      childOrigin
+      event.source !==
+      childWindow
     ) {
+
       return;
     }
 
+
+    if (
+      event.origin !==
+      childOrigin
+    ) {
+
+      return;
+    }
+
+
+    /*
+      Apps Script：
+      LINE 身分與案件資料全部讀取成功
+    */
+
+    if (
+      data.type ===
+      'CDE_AUTH_OK'
+    ) {
+
+      finishBoot();
+
+      return;
+    }
+
+
+    /*
+      Apps Script 驗證失敗
+    */
+
+    if (
+      data.type ===
+      'CDE_AUTH_ERROR'
+    ) {
+
+      showFatal(
+        String(
+          data.message ||
+          '院所待修正系統驗證失敗'
+        )
+      );
+
+      return;
+    }
+
+
+    /*
+      Apps Script 要求 LINE 發訊息
+    */
 
     if (
       data.type ===
@@ -455,29 +706,37 @@ window.addEventListener(
       await handleLineSend(
         data
       );
+
+      return;
     }
   }
 );
 
 
 /* =========================================================
-   LINE 群組通知
+   LINE 群組訊息
    ========================================================= */
 
-async function handleLineSend(data) {
+async function handleLineSend(
+  data
+) {
 
   const requestId =
     String(
-      data.requestId || ''
+      data.requestId ||
+      ''
     );
+
 
   const text =
     String(
-      data.text || ''
+      data.text ||
+      ''
     ).slice(
       0,
       5000
     );
+
 
   const allowShareFallback =
     Boolean(
@@ -491,7 +750,7 @@ async function handleLineSend(data) {
       requestId,
       false,
       'failed',
-      '通知內容為空白'
+      'LINE 訊息內容為空白'
     );
 
     return;
@@ -511,16 +770,22 @@ async function handleLineSend(data) {
 
   try {
 
-    const type =
+    const contextType =
       currentContext &&
       currentContext.type
         ? currentContext.type
         : '';
 
 
+    /*
+      從 LINE 群組內開啟：
+      直接傳回目前群組
+    */
+
     if (
       liff.isInClient() &&
-      type === 'group'
+      contextType ===
+        'group'
     ) {
 
       await liff.sendMessages(
@@ -535,9 +800,15 @@ async function handleLineSend(data) {
         ''
       );
 
+
       return;
     }
 
+
+    /*
+      非群組情境：
+      每日總結等功能可使用分享選擇器
+    */
 
     if (
       allowShareFallback &&
@@ -556,6 +827,7 @@ async function handleLineSend(data) {
         'shared',
         ''
       );
+
 
       return;
     }
@@ -584,6 +856,10 @@ async function handleLineSend(data) {
 }
 
 
+/* =========================================================
+   回覆 Apps Script iframe
+   ========================================================= */
+
 function sendBridgeResult(
   requestId,
   ok,
@@ -592,14 +868,15 @@ function sendBridgeResult(
 ) {
 
   if (
-    !childOrigin ||
-    !appFrame.contentWindow
+    !childWindow ||
+    !childOrigin
   ) {
+
     return;
   }
 
 
-  appFrame.contentWindow
+  childWindow
     .postMessage(
       {
         type:
@@ -609,22 +886,33 @@ function sendBridgeResult(
           requestId,
 
         ok:
-          ok,
+          Boolean(ok),
 
         status:
-          status,
+          String(
+            status ||
+            ''
+          ),
 
         message:
-          message || ''
+          String(
+            message ||
+            ''
+          )
       },
       childOrigin
     );
 }
 
 
+/* =========================================================
+   Start
+   ========================================================= */
+
 initializeLiff();
 
 </script>
 
 </body>
+
 </html>
