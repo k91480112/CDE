@@ -11,9 +11,7 @@
 
   <title>院所待修正事項</title>
 
-  <script
-    src="https://static.line-scdn.net/liff/edge/2/sdk.js">
-  </script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <style>
     * {
@@ -41,15 +39,21 @@
     }
 
     h1 {
-      margin: 0 0 24px;
+      margin: 0 0 22px;
       font-size: 22px;
+    }
+
+    .status {
+      padding: 22px;
+      text-align: center;
+      line-height: 1.7;
     }
 
     .box {
       margin-bottom: 12px;
-      padding: 16px;
+      padding: 15px;
       border: 1px solid #d9dee2;
-      border-radius: 10px;
+      border-radius: 9px;
     }
 
     .label {
@@ -64,31 +68,13 @@
       word-break: break-all;
     }
 
-    .status {
-      padding: 18px;
-      text-align: center;
-      line-height: 1.7;
-    }
-
     .error {
       display: none;
       padding: 16px;
       border: 1px solid #cfd5da;
-      border-radius: 10px;
+      border-radius: 9px;
       white-space: pre-wrap;
       line-height: 1.7;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 14px;
-      padding: 13px;
-      border: 0;
-      border-radius: 8px;
-      background: #263746;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 700;
     }
   </style>
 </head>
@@ -97,14 +83,12 @@
 
 <div class="app">
 
-  <h1>
-    院所待修正事項
-  </h1>
+  <h1>院所待修正事項</h1>
 
   <div
     id="status"
     class="status">
-    正在啟動 LIFF
+    步驟 1：載入 LIFF
   </div>
 
   <div
@@ -124,7 +108,7 @@
 
     <div class="box">
       <div class="label">
-        LIFF 執行環境
+        執行環境
       </div>
 
       <div
@@ -146,11 +130,22 @@
 
     <div class="box">
       <div class="label">
+        登入狀態
+      </div>
+
+      <div
+        id="loginState"
+        class="value">
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="label">
         測試版本
       </div>
 
       <div class="value">
-        GH-LIFF-TEST-01
+        GH-LIFF-TEST-02
       </div>
     </div>
 
@@ -173,111 +168,89 @@ const LIFF_ID =
 async function start() {
 
   const status =
-    document.getElementById(
-      'status'
-    );
+    document.getElementById('status');
 
   const result =
-    document.getElementById(
-      'result'
-    );
+    document.getElementById('result');
 
   const errorBox =
-    document.getElementById(
-      'error'
-    );
-
+    document.getElementById('error');
 
   try {
 
     status.textContent =
-      '初始化 LINE';
-
+      '步驟 2：初始化 LINE';
 
     await Promise.race([
 
       liff.init({
-        liffId: LIFF_ID
+        liffId: LIFF_ID,
+        withLoginOnExternalBrowser: true
       }),
 
       new Promise(
         (_, reject) =>
           setTimeout(
-            () =>
-              reject(
-                new Error(
-                  'liff.init() 超過 15 秒仍未完成'
-                )
-              ),
+            () => reject(
+              new Error(
+                'liff.init() 超過 15 秒'
+              )
+            ),
             15000
           )
       )
 
     ]);
 
-
     status.textContent =
-      '確認登入狀態';
-
+      '步驟 3：確認登入狀態';
 
     if (!liff.isLoggedIn()) {
-
-      liff.login({
-        redirectUri:
-          window.location.href
-      });
-
-      return;
+      throw new Error(
+        'LIFF 初始化完成，但目前仍未登入 LINE。'
+      );
     }
 
-
     status.textContent =
-      '取得 LINE 使用者資料';
-
+      '步驟 4：取得使用者資料';
 
     const profile =
       await liff.getProfile();
 
-
     const context =
       liff.getContext();
 
-
     document
-      .getElementById(
-        'displayName'
-      )
+      .getElementById('displayName')
       .textContent =
         profile.displayName || '無';
 
-
     document
-      .getElementById(
-        'environment'
-      )
+      .getElementById('environment')
       .textContent =
         liff.isInClient()
           ? 'LINE App 內'
           : '外部瀏覽器';
 
-
     document
-      .getElementById(
-        'contextType'
-      )
+      .getElementById('contextType')
       .textContent =
-        context &&
-        context.type
+        context && context.type
           ? context.type
           : '無聊天來源';
 
+    document
+      .getElementById('loginState')
+      .textContent =
+        liff.isLoggedIn()
+          ? '已登入'
+          : '未登入';
 
     status.style.display =
       'none';
 
     result.style.display =
       'block';
-
 
   } catch (error) {
 
@@ -290,8 +263,7 @@ async function start() {
     errorBox.textContent =
       'LIFF 啟動失敗\n\n' +
       (
-        error &&
-        error.message
+        error && error.message
           ? error.message
           : String(error)
       );
@@ -307,5 +279,4 @@ window.addEventListener(
 </script>
 
 </body>
-
 </html>
